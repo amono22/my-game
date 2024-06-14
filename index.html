@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Invaders Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            display: block;
+            background: black;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Score: 0</div>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let score = 0;
+
+        class Spaceship {
+            constructor() {
+                this.width = 60;
+                this.height = 20;
+                this.x = canvas.width / 2 - this.width / 2;
+                this.y = canvas.height - this.height - 10;
+                this.speed = 10;
+                this.bullets = [];
+            }
+
+            draw() {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+
+            move(direction) {
+                if (direction === 'left' && this.x > 0) {
+                    this.x -= this.speed;
+                }
+                if (direction === 'right' && this.x < canvas.width - this.width) {
+                    this.x += this.speed;
+                }
+            }
+
+            shoot() {
+                const bullet = new Bullet(this.x + this.width / 2, this.y);
+                this.bullets.push(bullet);
+            }
+        }
+
+        class Bullet {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 5;
+                this.height = 10;
+                this.speed = 7;
+            }
+
+            draw() {
+                ctx.fillStyle = 'red';
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+
+            update() {
+                this.y -= this.speed;
+            }
+        }
+
+        class Invader {
+            constructor(x, y) {
+                this.width = 30;
+                this.height = 20;
+                this.x = x;
+                this.y = y;
+                this.speed = 2;
+            }
+
+            draw() {
+                ctx.fillStyle = 'green';
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+
+            update() {
+                this.y += this.speed;
+            }
+        }
+
+        const spaceship = new Spaceship();
+        const invaders = [];
+        let keys = {};
+
+        document.addEventListener('keydown', (e) => keys[e.key] = true);
+        document.addEventListener('keyup', (e) => keys[e.key] = false);
+
+        function update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            spaceship.draw();
+
+            if (keys['ArrowLeft']) spaceship.move('left');
+            if (keys['ArrowRight']) spaceship.move('right');
+            if (keys[' ']) spaceship.shoot();
+
+            spaceship.bullets.forEach((bullet, index) => {
+                bullet.update();
+                bullet.draw();
+                if (bullet.y < 0) spaceship.bullets.splice(index, 1);
+            });
+
+            if (Math.random() < 0.02) {
+                const x = Math.random() * (canvas.width - 30);
+                invaders.push(new Invader(x, 0));
+            }
+
+            invaders.forEach((invader, invaderIndex) => {
+                invader.update();
+                invader.draw();
+                if (invader.y > canvas.height) {
+                    invaders.splice(invaderIndex, 1);
+                }
+
+                spaceship.bullets.forEach((bullet, bulletIndex) => {
+                    if (bullet.x < invader.x + invader.width &&
+                        bullet.x + bullet.width > invader.x &&
+                        bullet.y < invader.y + invader.height &&
+                        bullet.y + bullet.height > invader.y) {
+                        spaceship.bullets.splice(bulletIndex, 1);
+                        invaders.splice(invaderIndex, 1);
+                        score++;
+                        document.getElementById('score').innerText = 'Score: ' + score;
+                    }
+                });
+
+                if (invader.x < spaceship.x + spaceship.width &&
+                    invader.x + invader.width > spaceship.x &&
+                    invader.y < spaceship.y + spaceship.height &&
+                    invader.y + invader.height > spaceship.y) {
+                    alert('Game Over! Your score: ' + score);
+                    document.location.reload();
+                }
+            });
+
+            requestAnimationFrame(update);
+        }
+
+        update();
+    </script>
+</body>
+</html>
+
